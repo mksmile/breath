@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4·7·8 호흡 명상</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night-deep:#0C1322;
+    --night:#16203A;
+    --moon:#EDE8D8;
+    --moon-dim:#B9C3D9;
+    --inhale:#7FB8A4;   /* 옥색 — 들숨 */
+    --hold:#D9B36C;     /* 은은한 금색 — 멈춤 */
+    --exhale:#8E9FD4;   /* 달빛 남보라 — 날숨 */
+    --text:#E9E6DC;
+    --text-dim:#C3CCDE;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    font-family:'Pretendard','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;
+    background:radial-gradient(ellipse at 50% 120%, var(--night) 0%, var(--night-deep) 70%);
+    color:var(--text);
+    display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+    min-height:100dvh;padding:20px 0 calc(20px + env(safe-area-inset-bottom));overflow-x:hidden;
+  }
+  /* 배경 틴트(fixed) 위로 콘텐츠가 올라오도록 */
+  header,.levels,.goals,.guide,.hint,.controls{position:relative;}
+  /* 별 */
+  .star{position:fixed;border-radius:50%;background:var(--moon-dim);opacity:.35;
+    animation:twinkle 4s ease-in-out infinite;}
+  @keyframes twinkle{0%,100%{opacity:.15}50%{opacity:.5}}
+
+  header{text-align:center;z-index:5;margin-bottom:4px;}
+  header h1{font-weight:600;font-size:1.7rem;
+    letter-spacing:.32em;text-indent:.32em;color:var(--moon-dim);}
+  header p{margin-top:10px;font-size:1.15rem;color:var(--text-dim);letter-spacing:.12em;}
+
+  /* ── 호흡 무대 ── */
+  .stage{position:relative;width:min(60vmin,400px);height:min(60vmin,400px);
+    display:flex;align-items:center;justify-content:center;}
+
+  /* 진행 링 */
+  svg.ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);}
+  .ring-bg{fill:none;stroke:rgba(233,230,220,.15);stroke-width:3.5;}
+  .ring-fg{fill:none;stroke-width:5;stroke-linecap:round;
+    transition:stroke .8s ease;}
+
+  /* 호흡 기운(aura) */
+  .aura{position:absolute;width:62%;height:62%;border-radius:50%;
+    background:radial-gradient(circle, rgba(127,184,164,.22) 0%, rgba(127,184,164,.05) 55%, transparent 72%);
+    transform:scale(.72);transition:background 1.2s ease;filter:blur(2px);}
+  .aura2{position:absolute;width:52%;height:52%;border-radius:50%;
+    border:2px solid rgba(233,230,220,.4);transform:scale(.72);}
+
+  /* 명상하는 인물 */
+  .figure{position:relative;width:56%;z-index:3;opacity:.95;}
+  .figure svg{width:100%;height:auto;display:block;}
+  .breath-body{transform-origin:50% 78%;}
+
+  /* 문구 · 카운트 */
+  .guide{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    margin:10px 0 2px;z-index:6;text-align:center;}
+  .phase{font-weight:600;font-size:2.4rem;
+    letter-spacing:.18em;text-indent:.18em;transition:color .8s ease;min-height:3.2rem;}
+  .count{font-weight:700;font-size:6rem;
+    line-height:1.15;color:var(--moon);font-variant-numeric:tabular-nums;min-height:6.2rem;}
+  .cycles{font-size:1.15rem;color:var(--text-dim);letter-spacing:.2em;margin-top:4px;}
+
+  /* 컨트롤 */
+  .controls{display:flex;gap:12px;z-index:7;flex-wrap:wrap;justify-content:center;}
+  button{
+    font-family:'Pretendard','Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;font-weight:500;font-size:1.1rem;letter-spacing:.1em;text-indent:.1em;
+    display:inline-flex;align-items:center;justify-content:center;min-height:46px;
+    color:var(--text);background:rgba(233,230,220,.06);
+    border:1px solid rgba(233,230,220,.25);border-radius:24px;white-space:nowrap;
+    padding:14px 36px;cursor:pointer;transition:all .3s ease;
+  }
+  button:hover{background:rgba(233,230,220,.14);}
+  button:focus-visible{outline:2px solid var(--moon);outline-offset:3px;}
+  button.small{padding:14px 20px;font-size:1rem;}
+
+  .levels{display:flex;gap:10px;z-index:7;flex-wrap:wrap;justify-content:center;padding:0 12px;margin:10px 0 8px;}
+  .level-btn{
+    font-weight:500;font-size:1.02rem;letter-spacing:.04em;
+    color:var(--text-dim);background:transparent;
+    border:1px solid rgba(233,230,220,.22);border-radius:999px;
+    padding:9px 20px;cursor:pointer;transition:all .3s ease;
+  }
+  .level-btn:hover{color:var(--text);border-color:rgba(233,230,220,.5);}
+  .level-btn.active{
+    color:var(--night-deep);background:var(--moon);border-color:var(--moon);font-weight:700;
+  }
+  .level-btn small{display:block;font-size:.78em;letter-spacing:.02em;opacity:.8;}
+  .level-btn.active small{opacity:.9;}
+
+  .goals{display:flex;gap:8px;z-index:7;flex-wrap:wrap;justify-content:center;
+    padding:0 12px;margin:0 0 14px;}
+  .goal-btn{
+    background:rgba(142,159,212,.15);
+    border-color:rgba(142,159,212,.45);
+    color:var(--moon-dim);
+  }
+  .goal-btn:hover{border-color:rgba(142,159,212,.8);color:var(--text);}
+  .goals .goal-btn.active{
+    color:var(--night-deep);background:var(--hold);
+    border-color:var(--hold);font-weight:700;
+    box-shadow:0 0 14px rgba(217,179,108,.45);
+  }
+
+  .hint{font-size:1.05rem;color:var(--text);opacity:.85;margin:2px 0 14px;padding:0 18px;word-break:keep-all;max-width:34em;
+    letter-spacing:.1em;z-index:6;text-align:center;line-height:1.7;}
+
+  /* 호흡 단계와 동기화되는 배경 틴트 (두 겹 크로스페이드) */
+  .bg-tint{position:fixed;inset:0;z-index:0;pointer-events:none;
+    opacity:0;transition:opacity 2.4s ease;}
+  .stage{z-index:2;}
+
+  /* 몽환적인 밤하늘 느낌의 소프트 글로우 */
+  header h1, header p{text-shadow:0 0 22px rgba(233,230,220,.28), 0 2px 14px rgba(0,0,0,.45);}
+  .phase{text-shadow:0 0 26px currentColor, 0 2px 16px rgba(0,0,0,.5);}
+  .count{text-shadow:0 0 28px rgba(237,232,216,.5), 0 0 10px rgba(237,232,216,.3), 0 2px 14px rgba(0,0,0,.5);}
+  .cycles, .hint{text-shadow:0 1px 10px rgba(0,0,0,.5);}
+
+  /* 명상 종료 후 화면이 서서히 잦아드는 장막 */
+  .rest-veil{position:fixed;inset:0;z-index:8;pointer-events:none;
+    background:#060A14;opacity:0;transition:opacity 6s ease;}
+  .rest-veil.on{opacity:.55;}
+
+  @media (prefers-reduced-motion: reduce){
+    .star{animation:none;}
+  }
+  @media (max-width:520px){
+    body{padding:12px 0 calc(14px + env(safe-area-inset-bottom));}
+    header h1{font-size:1.25rem;letter-spacing:.24em;text-indent:.24em;}
+    header p{font-size:.92rem;margin-top:6px;}
+    .levels{gap:4px;margin:8px 2px 6px;padding:0 6px;flex-wrap:nowrap;}
+    .goals{gap:6px;margin:0 4px 8px;padding:0 8px;}
+    .level-btn{padding:6px 10px;font-size:.78rem;letter-spacing:-0.02em;}
+    .level-btn small{font-size:.72em;}
+    .stage{width:min(50vmin,320px);height:min(50vmin,320px);}
+    .guide{margin:6px 0 2px;}
+    .phase{font-size:1.45rem;min-height:2.1rem;letter-spacing:.12em;text-indent:.12em;}
+    .count{font-size:3.6rem;min-height:4.4rem;}
+    .cycles{font-size:.95rem;margin-top:2px;}
+    .hint{font-size:.88rem;margin:2px 0 12px;padding:0 14px;line-height:1.55;}
+    .controls{gap:8px;padding:0 10px;margin-top:2px;}
+    button{padding:11px 24px;font-size:.95rem;letter-spacing:.02em;text-indent:.02em;min-height:44px;}
+    button.small{padding:11px 16px;font-size:.85rem;}
+  }
+</style>
+</head>
+<body>
+<div class="bg-tint" id="tintA"></div>
+<div class="bg-tint" id="tintB"></div>
+<div class="rest-veil" id="restVeil"></div>
+
+<header>
+  <h1>사 · 칠 · 팔 호흡</h1>
+  <p id="subtitle">4초 들이마시고 · 7초 머금고 · 8초 내쉽니다</p>
+</header>
+
+<div class="levels" id="levels">
+  <button class="level-btn active" data-i="0">기본<small>4·7·8</small></button>
+  <button class="level-btn" data-i="1">중급<small>4·8·9</small></button>
+  <button class="level-btn" data-i="2">상급<small>4·9·10</small></button>
+  <button class="level-btn" data-i="3">숙련<small>4·10·11</small></button>
+</div>
+
+<div class="goals" id="goals">
+  <button class="level-btn goal-btn active" data-g="4">4회</button>
+  <button class="level-btn goal-btn" data-g="8">8회</button>
+  <button class="level-btn goal-btn" data-g="0">무한</button>
+</div>
+
+<div class="stage">
+  <svg class="ring" viewBox="0 0 100 100">
+    <circle class="ring-bg" cx="50" cy="50" r="47"/>
+    <circle class="ring-fg" id="ringFg" cx="50" cy="50" r="47"
+      stroke="#7FB8A4" stroke-dasharray="295.3" stroke-dashoffset="295.3"/>
+  </svg>
+  <div class="aura" id="aura"></div>
+  <div class="aura2" id="aura2"></div>
+
+  <!-- 명상하는 인물 (선화 일러스트) -->
+  <div class="figure">
+    <svg viewBox="0 0 200 230" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g class="breath-body" id="breathBody"
+         stroke="#FFFDF4" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+        <!-- 긴 머리 -->
+        <path d="M78 52 C70 78 66 104 70 128" opacity=".85"/>
+        <path d="M122 52 C130 78 134 104 130 128" opacity=".85"/>
+        <!-- 머리 -->
+        <circle cx="100" cy="52" r="24"/>
+        <!-- 감은 눈, 미소 -->
+        <path d="M90 50 q4 3 8 0" stroke-width="3"/>
+        <path d="M104 50 q4 3 8 0" stroke-width="3"/>
+        <path d="M95 62 q5 4 10 0" stroke-width="3" opacity=".95"/>
+        <!-- 몸통 · 어깨 -->
+        <path d="M100 76 C74 82 62 104 60 132 C59 148 66 160 82 166"/>
+        <path d="M100 76 C126 82 138 104 140 132 C141 148 134 160 118 166"/>
+        <!-- 팔 (무릎 위 합장 자세) -->
+        <path d="M62 118 C68 138 82 150 96 152"/>
+        <path d="M138 118 C132 138 118 150 104 152"/>
+        <circle cx="100" cy="154" r="5"/>
+        <!-- 가부좌 -->
+        <path d="M60 172 C74 186 126 186 140 172"/>
+        <path d="M52 176 C60 194 140 194 148 176"/>
+      </g>
+      <!-- 바닥 잔광 -->
+      <ellipse cx="100" cy="206" rx="62" ry="6" stroke="#8E9FD4" stroke-width="1" opacity=".35"/>
+    </svg>
+  </div>
+</div>
+
+<div class="guide">
+  <div class="phase" id="phaseLabel">준비되면 시작하세요</div>
+  <div class="count" id="countLabel"></div>
+  <div class="cycles" id="cycleLabel"></div>
+</div>
+
+<div class="hint" id="hint">등을 펴고 앉아, 혀끝을 윗니 뒤에 가볍게 댑니다</div>
+
+<div class="controls">
+  <button id="startBtn">시 작</button>
+  <button id="soundBtn" class="small" aria-pressed="true">🔔 소리</button>
+  <button id="fsBtn" class="small">⛶ 전체화면</button>
+</div>
+
+<script>
+(function(){
+  const LEVELS = [
+    {label:'기본', durs:[4,7,8]},
+    {label:'중급', durs:[4,8,9]},
+    {label:'상급', durs:[4,9,10]},
+    {label:'숙련', durs:[4,10,11]}   // 들숨 4초 고정, 머금기·날숨만 연장
+  ];
+  let levelIdx = 0;
+  const PHASES = [
+    {name:'들이마시기', dur:4, color:'var(--inhale)', ring:'#7FB8A4'},
+    {name:'머금기',     dur:7, color:'var(--hold)',   ring:'#D9B36C'},
+    {name:'내쉬기',     dur:8, color:'var(--exhale)', ring:'#8E9FD4'}
+  ];
+  const subtitle = document.getElementById('subtitle');
+  function applyLevel(i){
+    levelIdx = i;
+    const d = LEVELS[i].durs;
+    PHASES[0].dur=d[0]; PHASES[1].dur=d[1]; PHASES[2].dur=d[2];
+    subtitle.textContent = `${d[0]}초 들이마시고 · ${d[1]}초 머금고 · ${d[2]}초 내쉽니다`;
+    document.querySelectorAll('.level-btn:not(.goal-btn)').forEach((b,bi)=>
+      b.classList.toggle('active', bi===i));
+    if(running){          // 진행 중이면 들숨부터 새 리듬으로
+      cycles=0; cycleLabel.textContent='';
+      enterPhase(0);
+    }
+  }
+  const CIRC = 295.3;
+  const aura = document.getElementById('aura');
+  const aura2 = document.getElementById('aura2');
+  const body = document.getElementById('breathBody');
+  const ring = document.getElementById('ringFg');
+  const phaseLabel = document.getElementById('phaseLabel');
+  const countLabel = document.getElementById('countLabel');
+  const cycleLabel = document.getElementById('cycleLabel');
+  const startBtn = document.getElementById('startBtn');
+  const soundBtn = document.getElementById('soundBtn');
+  const hint = document.getElementById('hint');
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // 별 배치
+  for(let i=0;i<26;i++){
+    const s = document.createElement('div');
+    s.className='star';
+    const size = Math.random()*2+1;
+    s.style.width=s.style.height=size+'px';
+    s.style.left=Math.random()*100+'vw';
+    s.style.top=Math.random()*55+'vh';
+    s.style.animationDelay=(Math.random()*4)+'s';
+    document.body.appendChild(s);
+  }
+
+  let running=false, phaseIdx=0, phaseStart=0, cycles=0, raf=null;
+  let goalCycles=4, wakeLock=null, tintFlip=false;
+  const tintA=document.getElementById('tintA');
+  const tintB=document.getElementById('tintB');
+  let soundOn=true, audioCtx=null, lastTick='';
+
+  function ensureAudio(){
+    try{
+      audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+      if(audioCtx.state==='suspended') audioCtx.resume();
+    }catch(e){}
+  }
+  function chime(freq){
+    if(!soundOn || !audioCtx) return;   // 꺼짐/미초기화 시 어떤 객체도 생성하지 않음
+    try{
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type='sine'; o.frequency.value=freq;
+      g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.18, audioCtx.currentTime+0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+1.4);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(); o.stop(audioCtx.currentTime+1.5);
+    }catch(e){}
+  }
+
+  function beep(freq, dur){
+    if(!soundOn || !audioCtx) return;
+    try{
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type='sine'; o.frequency.value=freq;
+      g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.22, audioCtx.currentTime+0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+dur);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(); o.stop(audioCtx.currentTime+dur+0.05);
+    }catch(e){}
+  }
+
+  function finishBell(){
+    if(!soundOn || !audioCtx) return;
+    [523.25, 440, 349.23].forEach((f, i)=>{      // 도·라·파 하강
+      try{
+        const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+        const t0=audioCtx.currentTime + i*0.65;
+        o.type='sine'; o.frequency.value=f;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.2, t0+0.04);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0+2.2);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(t0); o.stop(t0+2.3);
+      }catch(e){}
+    });
+  }
+
+  // 화면 꺼짐 방지 (진행 중에만)
+  async function acquireWakeLock(){
+    try{
+      if('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+    }catch(e){ wakeLock=null; }
+  }
+  function releaseWakeLock(){
+    try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){}
+  }
+  document.addEventListener('visibilitychange', ()=>{
+    if(running && document.visibilityState==='visible') acquireWakeLock();
+  });
+
+  // 배경 틴트 크로스페이드
+  function setTint(color){
+    const incoming = tintFlip ? tintA : tintB;
+    const outgoing = tintFlip ? tintB : tintA;
+    tintFlip = !tintFlip;
+    incoming.style.background =
+      `radial-gradient(ellipse at 50% 62%, ${color}2E 0%, ${color}14 42%, transparent 72%)`;
+    incoming.style.opacity = '1';
+    outgoing.style.opacity = '0';
+  }
+  function clearTint(){ tintA.style.opacity='0'; tintB.style.opacity='0'; }
+
+  const SCALE_MIN=0.72, SCALE_MAX=1.06;
+  const BODY_MIN=1.0, BODY_MAX=1.045;
+  const ease = t => t<.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
+
+  function setVisual(scaleT){
+    const s = SCALE_MIN + (SCALE_MAX-SCALE_MIN)*scaleT;
+    const b = BODY_MIN + (BODY_MAX-BODY_MIN)*scaleT;
+    aura.style.transform = `scale(${s})`;
+    aura2.style.transform = `scale(${s*0.96})`;
+    if(!reduced) body.style.transform = `scale(${b})`;
+  }
+
+  function enterPhase(i){
+    phaseIdx=i; phaseStart=performance.now(); lastTick='';
+    const p=PHASES[i];
+    phaseLabel.textContent=p.name;
+    phaseLabel.style.color=p.color;
+    ring.setAttribute('stroke', p.ring);
+    aura.style.background =
+      `radial-gradient(circle, ${p.ring}38 0%, ${p.ring}10 55%, transparent 72%)`;
+    setTint(p.ring);
+    chime(i===0?392: i===1?440: 329.6); // 솔·라·미
+  }
+
+  function tick(now){
+    if(!running) return;
+    const p=PHASES[phaseIdx];
+    const t=(now-phaseStart)/1000;
+    if(t>=p.dur){
+      const next=(phaseIdx+1)%3;
+      if(next===0){
+        cycles++;
+        cycleLabel.textContent = goalCycles>0 ? `${cycles} / ${goalCycles}회` : cycles+'회 순환';
+        if(goalCycles>0 && cycles>=goalCycles){ finish(); return; }
+      }
+      enterPhase(next);
+      raf=requestAnimationFrame(tick);
+      return;
+    }
+    const remain=Math.ceil(p.dur-t);
+    countLabel.textContent=remain;
+    // 머금기·내쉬기의 마지막 3초: 띠·띠·띠 (마지막 1초는 높은 음)
+    if((phaseIdx===1 || phaseIdx===2) && remain<=3 && remain>=1){
+      const key = phaseIdx+'-'+remain;
+      if(lastTick!==key){
+        lastTick=key;
+        beep(remain===1 ? 1046.5 : 784, 0.12);  // 도(높)·솔
+      }
+    }
+    const prog=Math.min(t/p.dur,1);
+    ring.setAttribute('stroke-dashoffset', String(CIRC*(1-prog)));
+    if(phaseIdx===0)      setVisual(ease(prog));       // 들숨: 커짐
+    else if(phaseIdx===1) setVisual(1);                 // 머금기: 유지
+    else                  setVisual(1-ease(prog));      // 날숨: 작아짐
+    raf=requestAnimationFrame(tick);
+  }
+
+  function start(){
+    document.getElementById('restVeil').classList.remove('on');
+    ensureAudio();                       // 사용자 제스처 시점에 즉시 생성/재개
+    acquireWakeLock();
+    running=true; cycles=0;
+    startBtn.textContent='멈 춤';
+    hint.textContent='화면 속 그녀와 같은 리듬으로 — 코로 들이마시고, 입으로 내쉽니다';
+    cycleLabel.textContent = goalCycles>0 ? `0 / ${goalCycles}회` : '';
+    enterPhase(0);
+    raf=requestAnimationFrame(tick);
+  }
+  function stop(msg){
+    running=false; cancelAnimationFrame(raf);
+    releaseWakeLock();
+    startBtn.textContent='시 작';
+    phaseLabel.textContent = msg || '잠시 쉬어갑니다';
+    phaseLabel.style.color='var(--moon-dim)';
+    countLabel.textContent='';
+    hint.textContent='등을 펴고 앉아, 혀끝을 윗니 뒤에 가볍게 댑니다';
+    setVisual(0);
+    clearTint();
+    ring.setAttribute('stroke-dashoffset', String(CIRC));
+  }
+  function finish(){
+    finishBell();
+    stop('명상을 마쳤습니다 🙏');
+    cycleLabel.textContent = `${cycles}회 순환 완료`;
+    if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+    document.getElementById('restVeil').classList.add('on');  // 화면이 천천히 잦아듦
+  }
+
+  startBtn.addEventListener('click', ()=> running?stop():start());
+  document.querySelectorAll('.level-btn:not(.goal-btn)').forEach(b=>
+    b.addEventListener('click', ()=> applyLevel(Number(b.dataset.i))));
+
+  document.querySelectorAll('.goal-btn').forEach(b=>
+    b.addEventListener('click', ()=>{
+      goalCycles = Number(b.dataset.g);
+      document.querySelectorAll('.goal-btn').forEach(x=>x.classList.toggle('active', x===b));
+      if(running) cycleLabel.textContent = goalCycles>0 ? `${cycles} / ${goalCycles}회` : cycles+'회 순환';
+    }));
+
+  const fsBtn = document.getElementById('fsBtn');
+  fsBtn.addEventListener('click', ()=>{
+    if(!document.fullscreenElement){
+      document.documentElement.requestFullscreen().catch(()=>{});
+    }else{
+      document.exitFullscreen().catch(()=>{});
+    }
+  });
+  document.addEventListener('fullscreenchange', ()=>{
+    fsBtn.textContent = document.fullscreenElement ? '⛶ 축소' : '⛶ 전체화면';
+  });
+  soundBtn.addEventListener('click', ()=>{
+    soundOn=!soundOn;
+    soundBtn.textContent = soundOn?'🔔 소리':'🔇 소리';
+    soundBtn.setAttribute('aria-pressed', String(soundOn));
+    if(soundOn){ ensureAudio(); chime(392); }
+  });
+
+  setVisual(0);
+})();
+</script>
+</body>
+</html>
