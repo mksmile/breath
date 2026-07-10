@@ -173,6 +173,7 @@
 <div class="goals" id="goals">
   <button class="level-btn goal-btn active" data-g="4">4회</button>
   <button class="level-btn goal-btn" data-g="8">8회</button>
+  <button class="level-btn goal-btn" data-g="12">12회</button>
   <button class="level-btn goal-btn" data-g="0">무한</button>
 </div>
 
@@ -364,8 +365,8 @@
   }
   function clearTint(){ tintA.style.opacity='0'; tintB.style.opacity='0'; }
 
-  const SCALE_MIN=0.72, SCALE_MAX=1.06;
-  const BODY_MIN=1.0, BODY_MAX=1.045;
+  const SCALE_MIN=0.62, SCALE_MAX=1.28;
+  const BODY_MIN=1.0, BODY_MAX=1.06;
   const ease = t => t<.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
 
   function setVisual(scaleT){
@@ -427,7 +428,7 @@
     acquireWakeLock();
     running=true; cycles=0;
     startBtn.textContent='멈 춤';
-    hint.textContent='화면 속 그녀와 같은 리듬으로 — 코로 들이마시고, 입으로 내쉽니다';
+    hint.textContent='화면 속 도인과 같은 리듬으로 — 코로 들이마시고, 입으로 내쉽니다';
     cycleLabel.textContent = goalCycles>0 ? `0 / ${goalCycles}회` : '';
     enterPhase(0);
     raf=requestAnimationFrame(tick);
