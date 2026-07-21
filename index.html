@@ -174,6 +174,7 @@
   <button class="level-btn goal-btn active" data-g="4">4회</button>
   <button class="level-btn goal-btn" data-g="8">8회</button>
   <button class="level-btn goal-btn" data-g="12">12회</button>
+  <button class="level-btn goal-btn" data-g="16">16회</button>
   <button class="level-btn goal-btn" data-g="0">무한</button>
 </div>
 
@@ -285,7 +286,7 @@
   }
 
   let running=false, phaseIdx=0, phaseStart=0, cycles=0, raf=null;
-  let goalCycles=4, wakeLock=null, tintFlip=false;
+  let goalCycles=4, wakeLock=null, tintFlip=false, prepTimer=null;
   const tintA=document.getElementById('tintA');
   const tintB=document.getElementById('tintB');
   let soundOn=true, audioCtx=null, lastTick='';
@@ -324,6 +325,21 @@
     }catch(e){}
   }
 
+  function startBell(){
+    if(!soundOn || !audioCtx) return;
+    [349.23, 440, 523.25].forEach((f, i)=>{      // 파·라·도 상승 (마무리의 역순)
+      try{
+        const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+        const t0=audioCtx.currentTime + i*0.18;
+        o.type='sine'; o.frequency.value=f;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.2, t0+0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0+0.9);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(t0); o.stop(t0+1.0);
+      }catch(e){}
+    });
+  }
   function finishBell(){
     if(!soundOn || !audioCtx) return;
     [523.25, 440, 349.23].forEach((f, i)=>{      // 도·라·파 하강
@@ -428,6 +444,36 @@
     acquireWakeLock();
     running=true; cycles=0;
     startBtn.textContent='멈 춤';
+    prepare();                           // 먼저 5초간 준비
+  }
+
+  // 시작 전 5초 준비 카운트다운
+  function prepare(){
+    let left = 5;
+    phaseLabel.textContent = '자세를 잡고 준비하세요';
+    phaseLabel.style.color = 'var(--moon-dim)';
+    hint.textContent = '편안히 앉아 어깨의 힘을 빼고, 곧 첫 들숨을 시작합니다';
+    cycleLabel.textContent = '';
+    countLabel.textContent = left;
+    setVisual(0);
+    clearTint();
+    ring.setAttribute('stroke-dashoffset', String(CIRC));
+    beep(392, 0.1);                      // 준비 시작 알림(솔)
+    prepTimer = setInterval(()=>{
+      left--;
+      if(left > 0){
+        countLabel.textContent = left;
+        beep(392, 0.09);                 // 매초 짧은 신호
+      }else{
+        clearInterval(prepTimer); prepTimer=null;
+        if(!running) return;             // 준비 중 멈춤 눌렀으면 중단
+        beginBreathing();
+      }
+    }, 1000);
+  }
+
+  function beginBreathing(){
+    startBell();                         // 파·라·도 상승 — 첫 들숨 신호
     hint.textContent='화면 속 도인과 같은 리듬으로 — 코로 들이마시고, 입으로 내쉽니다';
     cycleLabel.textContent = goalCycles>0 ? `0 / ${goalCycles}회` : '';
     enterPhase(0);
@@ -435,6 +481,7 @@
   }
   function stop(msg){
     running=false; cancelAnimationFrame(raf);
+    if(prepTimer){ clearInterval(prepTimer); prepTimer=null; }
     releaseWakeLock();
     startBtn.textContent='시 작';
     phaseLabel.textContent = msg || '잠시 쉬어갑니다';
