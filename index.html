@@ -111,6 +111,26 @@
     box-shadow:0 0 14px rgba(217,179,108,.45);
   }
 
+  /* 머금기·날숨 미세조정 */
+  .tuner{display:flex;gap:16px;z-index:7;flex-wrap:wrap;justify-content:center;
+    margin:0 0 12px;padding:0 12px;position:relative;}
+  .tuner-item{display:flex;align-items:center;gap:8px;
+    background:rgba(233,230,220,.05);border:1px solid rgba(233,230,220,.16);
+    border-radius:22px;padding:6px 10px;}
+  .tuner-item .lbl{font-size:.86rem;color:var(--moon-dim);letter-spacing:.02em;min-width:3.6em;text-align:center;}
+  .tuner-item .val{font-size:.92rem;color:var(--text);font-variant-numeric:tabular-nums;min-width:2.6em;text-align:center;}
+  .step-btn{width:30px;height:30px;min-height:30px;border-radius:50%;padding:0;
+    font-size:1.15rem;line-height:1;display:inline-flex;align-items:center;justify-content:center;
+    background:rgba(233,230,220,.06);border:1px solid rgba(233,230,220,.3);color:var(--text);
+    cursor:pointer;transition:all .25s ease;}
+  .step-btn:hover{background:rgba(233,230,220,.16);}
+  .step-btn:disabled{opacity:.3;cursor:not-allowed;}
+
+  /* 소요/경과 시간 */
+  .timeinfo{font-size:.95rem;color:var(--moon-dim);letter-spacing:.04em;
+    margin-top:6px;font-variant-numeric:tabular-nums;text-shadow:0 1px 10px rgba(0,0,0,.5);}
+  .timeinfo b{color:var(--text);font-weight:600;}
+
   .hint{font-size:1.05rem;color:var(--text);opacity:.85;margin:2px 0 14px;padding:0 18px;word-break:keep-all;max-width:34em;
     letter-spacing:.1em;z-index:6;text-align:center;line-height:1.7;}
 
@@ -148,6 +168,12 @@
     .cycles{font-size:.95rem;margin-top:2px;}
     .hint{font-size:.88rem;margin:2px 0 12px;padding:0 14px;line-height:1.55;}
     .controls{gap:8px;padding:0 10px;margin-top:2px;}
+    .tuner{gap:8px;margin:0 4px 8px;}
+    .tuner-item{padding:5px 8px;gap:6px;}
+    .tuner-item .lbl{font-size:.78rem;min-width:3.2em;}
+    .tuner-item .val{font-size:.84rem;}
+    .step-btn{width:28px;height:28px;font-size:1.05rem;}
+    .timeinfo{font-size:.84rem;margin-top:4px;}
     button{padding:11px 24px;font-size:.95rem;letter-spacing:.02em;text-indent:.02em;min-height:44px;}
     button.small{padding:11px 16px;font-size:.85rem;}
   }
@@ -176,6 +202,15 @@
   <button class="level-btn goal-btn" data-g="12">12회</button>
   <button class="level-btn goal-btn" data-g="16">16회</button>
   <button class="level-btn goal-btn" data-g="0">무한</button>
+</div>
+
+<div class="tuner" id="tuner">
+  <div class="tuner-item">
+    <span class="lbl">머금기·내쉬기</span>
+    <button class="step-btn" data-d="-0.5" aria-label="머금기와 내쉬기 0.5초씩 줄이기">−</button>
+    <span class="val" id="tuneVal">7.0 · 8.0초</span>
+    <button class="step-btn" data-d="0.5" aria-label="머금기와 내쉬기 0.5초씩 늘리기">+</button>
+  </div>
 </div>
 
 <div class="stage">
@@ -222,6 +257,7 @@
   <div class="phase" id="phaseLabel">준비되면 시작하세요</div>
   <div class="count" id="countLabel"></div>
   <div class="cycles" id="cycleLabel"></div>
+  <div class="timeinfo" id="timeInfo"></div>
 </div>
 
 <div class="hint" id="hint">등을 펴고 앉아, 혀끝을 윗니 뒤에 가볍게 댑니다</div>
@@ -247,17 +283,65 @@
     {name:'내쉬기',     dur:8, color:'var(--exhale)', ring:'#8E9FD4'}
   ];
   const subtitle = document.getElementById('subtitle');
+  const tuneVal = document.getElementById('tuneVal');
+  const timeInfo = document.getElementById('timeInfo');
+  const MIN_SEC = 1;   // 최소 1초
+
+  function fmt(sec){                       // 초 → "m:ss"
+    sec = Math.max(0, Math.round(sec));
+    const m = Math.floor(sec/60), s2 = sec%60;
+    return m + ':' + String(s2).padStart(2,'0');
+  }
+  function cycleSeconds(){ return PHASES[0].dur + PHASES[1].dur + PHASES[2].dur; }
+
+  function refreshDisplay(){
+    const d = PHASES.map(p=>p.dur);
+    const fx = x => (Number.isInteger(x) ? x+'.0' : x.toFixed(1));
+    subtitle.textContent = `${fx(d[0])}초 들이마시고 · ${fx(d[1])}초 머금고 · ${fx(d[2])}초 내쉽니다`;
+    tuneVal.textContent = `${fx(d[1])} · ${fx(d[2])}초`;
+    updateTimeInfo();
+  }
+
+  function updateTimeInfo(elapsed){
+    if(goalCycles>0){
+      const total = cycleSeconds()*goalCycles;
+      if(running && elapsed!=null){
+        timeInfo.innerHTML = `경과 <b>${fmt(elapsed)}</b> / 총 ${fmt(total)}`;
+      }else{
+        timeInfo.innerHTML = `예상 소요시간 <b>${fmt(total)}</b>`;
+      }
+    }else{
+      if(running && elapsed!=null){
+        timeInfo.innerHTML = `경과 <b>${fmt(elapsed)}</b> · 1순환 ${cycleSeconds()}초`;
+      }else{
+        timeInfo.innerHTML = `1순환 <b>${cycleSeconds()}초</b> · 무한 반복`;
+      }
+    }
+  }
+
   function applyLevel(i){
     levelIdx = i;
     const d = LEVELS[i].durs;
     PHASES[0].dur=d[0]; PHASES[1].dur=d[1]; PHASES[2].dur=d[2];
-    subtitle.textContent = `${d[0]}초 들이마시고 · ${d[1]}초 머금고 · ${d[2]}초 내쉽니다`;
     document.querySelectorAll('.level-btn:not(.goal-btn)').forEach((b,bi)=>
       b.classList.toggle('active', bi===i));
+    refreshDisplay();
     if(running){          // 진행 중이면 들숨부터 새 리듬으로
-      cycles=0; cycleLabel.textContent='';
+      cycles=0; runStart=performance.now();
+      cycleLabel.textContent = goalCycles>0 ? `0 / ${goalCycles}회` : '';
       enterPhase(0);
     }
+  }
+
+  function adjust(delta){
+    // 머금기·내쉬기를 한 번에 0.5초씩 조정 (둘 다 최소값 이상일 때만 감소)
+    if(delta < 0 && (PHASES[1].dur+delta < MIN_SEC || PHASES[2].dur+delta < MIN_SEC)) return;
+    PHASES[1].dur = Math.round((PHASES[1].dur+delta)*2)/2;
+    PHASES[2].dur = Math.round((PHASES[2].dur+delta)*2)/2;
+    refreshDisplay();
+    if(running){ cycles=0; runStart=performance.now();
+      cycleLabel.textContent = goalCycles>0 ? `0 / ${goalCycles}회` : '';
+      enterPhase(0); }
   }
   const CIRC = 295.3;
   const aura = document.getElementById('aura');
@@ -286,7 +370,7 @@
   }
 
   let running=false, phaseIdx=0, phaseStart=0, cycles=0, raf=null;
-  let goalCycles=4, wakeLock=null, tintFlip=false, prepTimer=null;
+  let goalCycles=4, wakeLock=null, tintFlip=false, prepTimer=null, runStart=0;
   const tintA=document.getElementById('tintA');
   const tintB=document.getElementById('tintB');
   let soundOn=true, audioCtx=null, lastTick='';
@@ -422,6 +506,7 @@
     }
     const remain=Math.ceil(p.dur-t);
     countLabel.textContent=remain;
+    updateTimeInfo((now-runStart)/1000);
     // 머금기·내쉬기의 마지막 3초: 띠·띠·띠 (마지막 1초는 높은 음)
     if((phaseIdx===1 || phaseIdx===2) && remain<=3 && remain>=1){
       const key = phaseIdx+'-'+remain;
@@ -473,6 +558,7 @@
   }
 
   function beginBreathing(){
+    runStart = performance.now();        // 호흡 시작 시각
     startBell();                         // 파·라·도 상승 — 첫 들숨 신호
     hint.textContent='화면 속 도인과 같은 리듬으로 — 코로 들이마시고, 입으로 내쉽니다';
     cycleLabel.textContent = goalCycles>0 ? `0 / ${goalCycles}회` : '';
@@ -491,6 +577,7 @@
     setVisual(0);
     clearTint();
     ring.setAttribute('stroke-dashoffset', String(CIRC));
+    updateTimeInfo(null);   // 예상 소요시간 표시로 복귀
   }
   function finish(){
     finishBell();
@@ -509,6 +596,7 @@
       goalCycles = Number(b.dataset.g);
       document.querySelectorAll('.goal-btn').forEach(x=>x.classList.toggle('active', x===b));
       if(running) cycleLabel.textContent = goalCycles>0 ? `${cycles} / ${goalCycles}회` : cycles+'회 순환';
+      updateTimeInfo(running ? (performance.now()-runStart)/1000 : null);
     }));
 
   const fsBtn = document.getElementById('fsBtn');
@@ -522,6 +610,9 @@
   document.addEventListener('fullscreenchange', ()=>{
     fsBtn.textContent = document.fullscreenElement ? '⛶ 축소' : '⛶ 전체화면';
   });
+
+  document.querySelectorAll('.step-btn').forEach(b=>
+    b.addEventListener('click', ()=> adjust(Number(b.dataset.d))));
   soundBtn.addEventListener('click', ()=>{
     soundOn=!soundOn;
     soundBtn.textContent = soundOn?'🔔 소리':'🔇 소리';
@@ -530,6 +621,7 @@
   });
 
   setVisual(0);
+  refreshDisplay();
 })();
 </script>
 </body>
