@@ -348,16 +348,34 @@
 
   // ── 설정 저장/복원 (마지막 사용 값 기억) ──
   const STORE_KEY = 'breath478.settings';
-  function saveSettings(){
+  let loadingSettings = false;   // 복원 도중의 중간 저장을 막는 가드
+
+  // localStorage가 막혀 있어도(인앱 브라우저·프라이빗 모드 등) 동작하도록 쿠키로 폴백
+  const LS_OK = (function(){
+    try{ const k='__t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); return true; }
+    catch(e){ return false; }
+  })();
+  function writeStore(str){
+    if(LS_OK){ try{ localStorage.setItem(STORE_KEY, str); return; }catch(e){} }
+    try{ document.cookie = STORE_KEY+'='+encodeURIComponent(str)+
+      ';path=/;max-age=31536000;SameSite=Lax'; }catch(e){}
+  }
+  function readStore(){
+    if(LS_OK){ try{ const v=localStorage.getItem(STORE_KEY); if(v!=null) return v; }catch(e){} }
     try{
-      localStorage.setItem(STORE_KEY, JSON.stringify({
-        level: levelIdx,
-        hold: PHASES[1].dur,
-        exhale: PHASES[2].dur,
-        goal: goalCycles,
-        sound: soundOn
-      }));
-    }catch(e){}
+      const m = document.cookie.match(new RegExp('(?:^|; )'+STORE_KEY+'=([^;]*)'));
+      return m ? decodeURIComponent(m[1]) : null;
+    }catch(e){ return null; }
+  }
+  function saveSettings(){
+    if(loadingSettings) return;  // 복원 중에는 저장하지 않음 (기존 값 덮어쓰기 방지)
+    writeStore(JSON.stringify({
+      level: levelIdx,
+      hold: PHASES[1].dur,
+      exhale: PHASES[2].dur,
+      goal: goalCycles,
+      sound: soundOn
+    }));
   }
   function setGoal(g){
     goalCycles = g;
@@ -366,18 +384,21 @@
   }
   function loadSettings(){
     let cfg=null;
-    try{ cfg = JSON.parse(localStorage.getItem(STORE_KEY)||'null'); }catch(e){}
-    if(!cfg){ applyLevel(0); return; }               // 저장값 없으면 기본
+    try{ cfg = JSON.parse(readStore()||'null'); }catch(e){}
+    loadingSettings = true;                           // 복원 시작 — 중간 저장 차단
+    if(!cfg){ applyLevel(0); loadingSettings=false; return; }
     applyLevel(cfg.level ?? 0);                       // 난이도(등급) 복원
     if(typeof cfg.hold==='number')   PHASES[1].dur = cfg.hold;    // 미세조정 복원
     if(typeof cfg.exhale==='number') PHASES[2].dur = cfg.exhale;
-    setGoal(cfg.goal ?? 4);                           // 횟수 복원
+    setGoal(typeof cfg.goal==='number' ? cfg.goal : 4);          // 횟수 복원
     if(typeof cfg.sound==='boolean'){                 // 소리 상태 복원
       soundOn = cfg.sound;
       soundBtn.textContent = soundOn?'🔔 소리':'🔇 소리';
       soundBtn.setAttribute('aria-pressed', String(soundOn));
     }
     refreshDisplay();
+    loadingSettings = false;                          // 복원 끝
+    saveSettings();                                   // 최종 상태를 정확히 1회 저장
   }
   const CIRC = 295.3;
   const aura = document.getElementById('aura');
